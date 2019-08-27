@@ -1,8 +1,15 @@
+using System;
+using AutoMapper;
+using KayWashApp.DataBase;
+using KayWashApp.DataBase.Entities;
+using KayWashApp.DataBase.Repositories;
+using KayWashApp.Dto;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SpaServices.AngularCli;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
@@ -28,6 +35,10 @@ namespace KayWashApp
             {
                 configuration.RootPath = "ClientApp/dist";
             });
+
+            services.AddDbContext<KayWashDbContext>(options => options.UseSqlServer(KayWashDbContext.DbConnectionString));
+            services.AddTransient<CarRepository>();
+            services.AddTransient<WasherRepository>();
 
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c =>
@@ -83,6 +94,18 @@ namespace KayWashApp
                 {
                     spa.UseAngularCliServer(npmScript: "start");
                 }
+            });
+
+            InitializeMapper();
+        }
+
+        private void InitializeMapper()
+        {
+            var config = new MapperConfiguration(x =>
+            {
+                x.CreateMap<Washer, WasherDto>();
+                x.CreateMap<Car, CarDto>();
+                x.CreateMap<Customer, CustomerDto>();
             });
         }
     }
