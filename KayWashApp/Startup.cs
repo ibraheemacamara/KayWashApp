@@ -1,9 +1,4 @@
 using System;
-using AutoMapper;
-using KayWashApp.DataBase;
-using KayWashApp.DataBase.Entities;
-using KayWashApp.DataBase.Repositories;
-using KayWashApp.Dto;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -13,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
+using KayWashApp.DataAccess;
 
 namespace KayWashApp
 {
@@ -36,15 +32,19 @@ namespace KayWashApp
                 configuration.RootPath = "ClientApp/dist";
             });
 
-            services.AddDbContext<KayWashDbContext>(options => options.UseSqlServer(KayWashDbContext.DbConnectionString));
-            services.AddTransient<CarRepository>();
-            services.AddTransient<WasherRepository>();
+            //services.AddDbContext<KayWashDbContext>(options => options.UseSqlServer(KayWashDbContext.DbConnectionString));
+            //services.AddTransient<CarRepository>();
+            //services.AddTransient<WasherRepository>();
+
 
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "KayWashApp API", Version = "v1" });
             });
+
+            services.AddDbContext<KayWashAppContext>(options =>
+                    options.UseSqlServer(Configuration.GetConnectionString("KayWashAppContext")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -101,12 +101,12 @@ namespace KayWashApp
 
         private void InitializeMapper()
         {
-            var config = new MapperConfiguration(x =>
-            {
-                x.CreateMap<Washer, WasherDto>();
-                x.CreateMap<Car, CarDto>();
-                x.CreateMap<Customer, CustomerDto>();
-            });
+            //var config = new MapperConfiguration(x =>
+            //{
+            //    x.CreateMap<Washer, WasherDto>();
+            //    x.CreateMap<Car, CarDto>();
+            //    x.CreateMap<Customer, CustomerDto>();
+            //});
         }
     }
 }
