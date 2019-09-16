@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using KayWashApp.DataAccess;
 using KayWashApp.DataAccess.Model;
+using KayWashApp.Services;
+using Dto;
 
 namespace KayWashApp.Controllers
 {
@@ -16,46 +18,49 @@ namespace KayWashApp.Controllers
     {
         private readonly KayWashAppContext _context;
 
-        public AdminsController(KayWashAppContext context)
+        private readonly IAdminService _adminService;
+
+        public AdminsController(IAdminService service)
         {
-            _context = context;
+            _adminService = service;
         }
 
         // GET: api/Admins
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Admin>>> GetAdmin()
+        public async Task<ActionResult<IEnumerable<AdminDto>>> GetAdmin()
         {
-            return await _context.Admin.ToListAsync();
+            var admins = _adminService.GetAll();
+            return Ok(admins);
+            //return await _context.Admin.ToListAsync();
         }
 
         // GET: api/Admins/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Admin>> GetAdmin(long id)
+        public async Task<ActionResult<AdminDto>> GetAdmin(long id)
         {
-            var admin = await _context.Admin.FindAsync(id);
+            var admin = _adminService.GetById(id);
 
             if (admin == null)
             {
                 return NotFound();
             }
 
-            return admin;
+            return Ok(admin);
         }
 
         // PUT: api/Admins/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutAdmin(long id, Admin admin)
+        public async Task<IActionResult> PutAdmin(long id, AdminDto admin)
         {
             if (id != admin.Id)
             {
                 return BadRequest();
             }
 
-            _context.Entry(admin).State = EntityState.Modified;
 
             try
             {
-                await _context.SaveChangesAsync();
+                _adminService.Update(id, admin);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -74,33 +79,31 @@ namespace KayWashApp.Controllers
 
         // POST: api/Admins
         [HttpPost]
-        public async Task<ActionResult<Admin>> PostAdmin(Admin admin)
+        public async Task<ActionResult<AdminDto>> PostAdmin(AdminDto admin)
         {
-            _context.Admin.Add(admin);
-            await _context.SaveChangesAsync();
+            _adminService.Insert(admin);
 
             return CreatedAtAction("GetAdmin", new { id = admin.Id }, admin);
         }
 
         // DELETE: api/Admins/5
         [HttpDelete("{id}")]
-        public async Task<ActionResult<Admin>> DeleteAdmin(long id)
+        public async Task<ActionResult<AdminDto>> DeleteAdmin(long id)
         {
-            var admin = await _context.Admin.FindAsync(id);
+            var admin = _adminService.GetById(id);
             if (admin == null)
             {
                 return NotFound();
             }
 
-            _context.Admin.Remove(admin);
-            await _context.SaveChangesAsync();
+            _adminService.Delete(id);
 
             return admin;
         }
 
         private bool AdminExists(long id)
         {
-            return _context.Admin.Any(e => e.Id == id);
+            return _adminService.GetAll().Any(e => e.Id == id);
         }
     }
 }

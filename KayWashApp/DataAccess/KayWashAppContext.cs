@@ -14,6 +14,11 @@ namespace KayWashApp.DataAccess
         {
         }
 
+        public KayWashAppContext()
+        {
+
+        }
+
         public DbSet<KayWashApp.DataAccess.Model.Customer> Customer { get; set; }
 
         public DbSet<KayWashApp.DataAccess.Model.CarDetailer> CarDetailer { get; set; }

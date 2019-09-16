@@ -9,6 +9,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using KayWashApp.DataAccess;
+using Unity.WebApi;
+using KayWashApp.DataAccess.Repositories;
+using KayWashApp.DataAccess.Model;
+using Dto;
+using KayWashApp.Services;
 
 namespace KayWashApp
 {
@@ -32,10 +37,18 @@ namespace KayWashApp
                 configuration.RootPath = "ClientApp/dist";
             });
 
+            services.AddScoped<IAdminService, AdminService>();
+
+            services.AddScoped<IAdminRepository, AdminRepository>();
+
             //services.AddDbContext<KayWashDbContext>(options => options.UseSqlServer(KayWashDbContext.DbConnectionString));
             //services.AddTransient<CarRepository>();
             //services.AddTransient<WasherRepository>();
 
+            services.AddDbContext<KayWashAppContext>(options =>
+                   options.UseSqlServer(Configuration.GetConnectionString("KayWashAppContext")));
+
+            //ConfigureUnity();
 
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c =>
@@ -43,8 +56,6 @@ namespace KayWashApp
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "KayWashApp API", Version = "v1" });
             });
 
-            services.AddDbContext<KayWashAppContext>(options =>
-                    options.UseSqlServer(Configuration.GetConnectionString("KayWashAppContext")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -96,7 +107,9 @@ namespace KayWashApp
                 }
             });
 
+
             InitializeMapper();
+
         }
 
         private void InitializeMapper()
@@ -108,5 +121,14 @@ namespace KayWashApp
             //    x.CreateMap<Customer, CustomerDto>();
             //});
         }
+
+        //private void ConfigureUnity()
+        //{
+        //    var container = UnityContainerSingleton.Instance.Container;
+
+        //    Configuration.DependencyResolver = new UnityDependencyResolver(container);
+
+        //    UnityRegistration.RegisterServices();
+        //}
     }
 }
