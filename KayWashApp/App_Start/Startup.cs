@@ -38,8 +38,10 @@ namespace KayWashApp
             });
 
             services.AddScoped<IAdminService, AdminService>();
+            services.AddScoped<ICarDetailerService, CarDetailerService>();
 
             services.AddScoped<IAdminRepository, AdminRepository>();
+            services.AddScoped<ICarDetailerRepository, CarDetailerRepository>();
 
             //services.AddDbContext<KayWashDbContext>(options => options.UseSqlServer(KayWashDbContext.DbConnectionString));
             //services.AddTransient<CarRepository>();

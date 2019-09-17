@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using KayWashApp.DataAccess;
 using KayWashApp.DataAccess.Model;
+using KayWashApp.Services;
+using KayWashApp.Dto;
 
 namespace KayWashApp.Controllers
 {
@@ -14,48 +16,47 @@ namespace KayWashApp.Controllers
     [ApiController]
     public class CarDetailersController : ControllerBase
     {
-        private readonly KayWashAppContext _context;
+        private readonly ICarDetailerService _carDetailerService;
 
-        public CarDetailersController(KayWashAppContext context)
+        public CarDetailersController(ICarDetailerService service)
         {
-            _context = context;
+            _carDetailerService = service;
         }
 
         // GET: api/CarDetailers
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CarDetailer>>> GetCarDetailer()
+        public async Task<ActionResult<IEnumerable<CarDetailerDto>>> GetCarDetailer()
         {
-            return await _context.CarDetailer.ToListAsync();
+            var carDetailers = _carDetailerService.GetAll();
+            return Ok(carDetailers);
         }
 
         // GET: api/CarDetailers/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<CarDetailer>> GetCarDetailer(long id)
+        public async Task<ActionResult<CarDetailerDto>> GetCarDetailer(long id)
         {
-            var carDetailer = await _context.CarDetailer.FindAsync(id);
+            var carDetailer = _carDetailerService.GetById(id);
 
             if (carDetailer == null)
             {
                 return NotFound();
             }
 
-            return carDetailer;
+            return Ok(carDetailer);
         }
 
         // PUT: api/CarDetailers/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutCarDetailer(long id, CarDetailer carDetailer)
+        public async Task<IActionResult> PutCarDetailer(long id, CarDetailerDto carDetailer)
         {
             if (id != carDetailer.Id)
             {
                 return BadRequest();
             }
 
-            _context.Entry(carDetailer).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
+                _carDetailerService.Update(id, carDetailer);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -74,33 +75,49 @@ namespace KayWashApp.Controllers
 
         // POST: api/CarDetailers
         [HttpPost]
-        public async Task<ActionResult<CarDetailer>> PostCarDetailer(CarDetailer carDetailer)
+        public async Task<ActionResult<CarDetailer>> PostCarDetailer(CarDetailerDto carDetailer)
         {
-            _context.CarDetailer.Add(carDetailer);
-            await _context.SaveChangesAsync();
+            //TODO validation
 
+            try
+            {
+                _carDetailerService.Insert(carDetailer);
+            }
+            catch (Exception ex)
+            {
+                //TODO log
+                return BadRequest();
+            }
+            
             return CreatedAtAction("GetCarDetailer", new { id = carDetailer.Id }, carDetailer);
         }
 
         // DELETE: api/CarDetailers/5
         [HttpDelete("{id}")]
-        public async Task<ActionResult<CarDetailer>> DeleteCarDetailer(long id)
+        public async Task<ActionResult<CarDetailerDto>> DeleteCarDetailer(long id)
         {
-            var carDetailer = await _context.CarDetailer.FindAsync(id);
+            var carDetailer = _carDetailerService.GetById(id);
             if (carDetailer == null)
             {
                 return NotFound();
             }
 
-            _context.CarDetailer.Remove(carDetailer);
-            await _context.SaveChangesAsync();
+            try
+            {
+                _carDetailerService.Delete(id);
+            }
+            catch (Exception)
+            {
+
+                return BadRequest();
+            }
 
             return carDetailer;
         }
 
         private bool CarDetailerExists(long id)
         {
-            return _context.CarDetailer.Any(e => e.Id == id);
+            return _carDetailerService.GetAll().Any(e => e.Id == id);
         }
     }
 }

@@ -16,8 +16,7 @@ namespace KayWashApp.Controllers
     [ApiController]
     public class AdminsController : ControllerBase
     {
-        private readonly KayWashAppContext _context;
-
+        
         private readonly IAdminService _adminService;
 
         public AdminsController(IAdminService service)
@@ -56,7 +55,6 @@ namespace KayWashApp.Controllers
             {
                 return BadRequest();
             }
-
 
             try
             {
