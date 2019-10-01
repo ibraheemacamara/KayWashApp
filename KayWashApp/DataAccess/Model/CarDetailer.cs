@@ -11,6 +11,8 @@ namespace KayWashApp.DataAccess.Model
     {
         [Key]
         public long Id { get; set; }
+        public byte[] PasswordHash { get; set; }
+        public byte[] PasswordSalt { get; set; }
         public bool Active { get; set; }
         public double Rate { get; set; }
         public int RatesCount { get; set; }

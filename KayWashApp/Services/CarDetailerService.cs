@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using KayWashApp.Common;
 using KayWashApp.DataAccess.Repositories;
 using KayWashApp.Dto;
+using Microsoft.Extensions.Options;
 
 namespace KayWashApp.Services
 {
@@ -14,6 +16,28 @@ namespace KayWashApp.Services
         public CarDetailerService(ICarDetailerRepository repo)
         {
             _carDetailerRepository = repo;
+        }
+
+        public CarDetailerDto Authenticate(string phone, string password)
+        {
+            if(string.IsNullOrEmpty(phone) || string.IsNullOrEmpty(password))
+            {
+                return null;
+            }
+
+            var carDetailer = _carDetailerRepository.GetAll().SingleOrDefault(x => x.Phone == phone);
+
+            if(carDetailer == null)
+            {
+                return null;
+            }
+
+            if(!Helper.VerifyPasswordHash(password, carDetailer.Password))
+            {
+                return null;
+            }
+
+            return carDetailer;
         }
 
         public void Delete(long id)
@@ -33,11 +57,27 @@ namespace KayWashApp.Services
 
         public CarDetailerDto Insert(CarDetailerDto item)
         {
+            if(string.IsNullOrEmpty(item.Password))
+            {
+                throw new AppException("Un mot de pass est obligatoire");
+            }
+
+            if(_carDetailerRepository.GetAll().Any(x => x.Phone == item.Phone))
+            {
+                throw new AppException("Le numéro téléphone " + item.Phone + " existe déjà!");
+            }
+
+            item.Password = Helper.CreatePasswordHash(item.Password);
             return _carDetailerRepository.Insert(item);
         }
 
         public CarDetailerDto Update(long id, CarDetailerDto item)
         {
+            if (_carDetailerRepository.GetAll().Any(x => x.Phone == item.Phone))
+            {
+                throw new AppException("Le numéro téléphone " + item.Phone + " existe déjà!");
+            }
+
             return _carDetailerRepository.Update(id, item);
         }
     }

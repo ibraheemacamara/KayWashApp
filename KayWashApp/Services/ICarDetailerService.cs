@@ -8,5 +8,6 @@ namespace KayWashApp.Services
 {
     public interface ICarDetailerService : IGenericService<CarDetailerDto>
     {
+        CarDetailerDto Authenticate(string phone, string password);
     }
 }

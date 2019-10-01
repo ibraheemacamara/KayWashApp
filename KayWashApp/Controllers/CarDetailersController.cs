@@ -9,6 +9,14 @@ using KayWashApp.DataAccess;
 using KayWashApp.DataAccess.Model;
 using KayWashApp.Services;
 using KayWashApp.Dto;
+using Microsoft.AspNetCore.Authorization;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
+using Microsoft.Extensions.Options;
+using KayWashApp.Common;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
+//using System.Web.Http;
 
 namespace KayWashApp.Controllers
 {
@@ -17,10 +25,51 @@ namespace KayWashApp.Controllers
     public class CarDetailersController : ControllerBase
     {
         private readonly ICarDetailerService _carDetailerService;
+        private readonly AppSettings _appSettings;
 
-        public CarDetailersController(ICarDetailerService service)
+        public CarDetailersController(ICarDetailerService service,
+            IOptions<AppSettings> appSettings)
         {
             _carDetailerService = service;
+
+            _appSettings = appSettings.Value;
+        }
+
+        [AllowAnonymous]
+        [HttpPost("authenticate")]
+        public IActionResult Authenticate([FromBody]CarDetailerDto carDetailerDto)
+        {
+            var carDatiler = _carDetailerService.Authenticate(carDetailerDto.Phone, carDetailerDto.Password);
+
+            if(carDatiler == null)
+            {
+                return BadRequest(new { message = "Le numéro de téléphone ou le mot de pass est incorrect" });
+            }
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new Claim[]
+                {
+                    new Claim(ClaimTypes.Name, carDatiler.Id.ToString())
+                }),
+                Expires = DateTime.UtcNow.AddDays(7),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var tokenString = tokenHandler.WriteToken(token);
+
+            return Ok(new
+            {
+                Id = carDatiler.Id,
+                Phone = carDatiler.Phone,
+                FirstName = carDatiler.FirstName,
+                LastName = carDatiler.LastName,
+                Token = tokenString
+            });
+
         }
 
         // GET: api/CarDetailers
@@ -74,22 +123,23 @@ namespace KayWashApp.Controllers
         }
 
         // POST: api/CarDetailers
-        [HttpPost]
-        public async Task<ActionResult<CarDetailer>> PostCarDetailer(CarDetailerDto carDetailer)
+        [AllowAnonymous]
+        [HttpPost("register")]
+        public IActionResult Register([FromBody]CarDetailerDto carDetailer)
         {
             //TODO validation
 
             try
             {
                 _carDetailerService.Insert(carDetailer);
+                return Ok();
             }
             catch (Exception ex)
             {
                 //TODO log
-                return BadRequest();
+                return BadRequest(new { message = ex.Message});
             }
-            
-            return CreatedAtAction("GetCarDetailer", new { id = carDetailer.Id }, carDetailer);
+          
         }
 
         // DELETE: api/CarDetailers/5
