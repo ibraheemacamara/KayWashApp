@@ -37,7 +37,7 @@ namespace KayWashApp.Controllers
 
         [AllowAnonymous]
         [HttpPost("authenticate")]
-        public IActionResult Authenticate([FromBody]CarDetailerDto carDetailerDto)
+        public async Task<object> Authenticate([FromBody]CarDetailerDto carDetailerDto)
         {
             var carDatiler = _carDetailerService.Authenticate(carDetailerDto.Phone, carDetailerDto.Password);
 
@@ -46,22 +46,9 @@ namespace KayWashApp.Controllers
                 return BadRequest(new { message = "Le numéro de téléphone ou le mot de pass est incorrect" });
             }
 
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
+            var tokenString = TokenProvider.CreateToken(_appSettings.Secret, carDatiler.Id.ToString()+ ",carDetailer");
 
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new Claim[]
-                {
-                    new Claim(ClaimTypes.Name, carDatiler.Id.ToString())
-                }),
-                Expires = DateTime.UtcNow.AddDays(7),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            var tokenString = tokenHandler.WriteToken(token);
-
-            return Ok(new
+            return await Task.FromResult(new
             {
                 Id = carDatiler.Id,
                 Phone = carDatiler.Phone,
@@ -73,13 +60,16 @@ namespace KayWashApp.Controllers
         }
 
         // GET: api/CarDetailers
+        [Authorize]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CarDetailerDto>>> GetCarDetailer()
+        public async Task<IEnumerable<CarDetailerDto>> GetCarDetailer()
         {
             var carDetailers = _carDetailerService.GetAll();
-            return Ok(carDetailers);
+
+            return await Task.FromResult(carDetailers);
         }
 
+        [Authorize]
         // GET: api/CarDetailers/5
         [HttpGet("{id}")]
         public async Task<ActionResult<CarDetailerDto>> GetCarDetailer(long id)
@@ -91,10 +81,11 @@ namespace KayWashApp.Controllers
                 return NotFound();
             }
 
-            return Ok(carDetailer);
+            return await Task.FromResult(carDetailer);
         }
 
         // PUT: api/CarDetailers/5
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> PutCarDetailer(long id, CarDetailerDto carDetailer)
         {
@@ -123,6 +114,7 @@ namespace KayWashApp.Controllers
         }
 
         // POST: api/CarDetailers
+        [Authorize]
         [AllowAnonymous]
         [HttpPost("register")]
         public IActionResult Register([FromBody]CarDetailerDto carDetailer)
@@ -143,6 +135,7 @@ namespace KayWashApp.Controllers
         }
 
         // DELETE: api/CarDetailers/5
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<ActionResult<CarDetailerDto>> DeleteCarDetailer(long id)
         {

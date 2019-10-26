@@ -1,4 +1,5 @@
 ﻿using KayWashApp.Common;
+using KayWashApp.Dto;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,41 +7,45 @@ using System.Threading.Tasks;
 
 namespace KayWashApp.Services
 {
-    public interface IAccountService : IGenericService<Account>
+    public interface IAccountService 
     {
-        Account Authenticate(string phone, string password);
+        //Account GetById(long id);
+        //IEnumerable<Account> GetAll();
+        Account GetUser(string name);
     }
 
     public class AccountService : IAccountService
     {
-        public Account Authenticate(string phone, string password)
+        private ICarDetailerService _carDetailerService;
+        private ICustomerService _customerService;
+
+        public AccountService(ICarDetailerService carDetailerService, ICustomerService customerService)
         {
-            throw new NotImplementedException();
+            _carDetailerService = carDetailerService;
+            _customerService = customerService;
         }
 
-        public void Delete(long id)
+        public Account GetUser(string name)
         {
-            throw new NotImplementedException();
-        }
+           var array = name.Split(',');
 
-        public IEnumerable<Account> GetAll()
-        {
-            throw new NotImplementedException();
-        }
+            if(array.Length != 2)
+            {
+                return null;
+            }
 
-        public Account GetById(long id)
-        {
-            throw new NotImplementedException();
-        }
+            if(array[1] == "carDetailer")
+            {
+                var userId = int.Parse(array[0]);
+                return _carDetailerService.GetById(userId);
+            }
+            if (array[1] == "customer")
+            {
+                var userId = int.Parse(array[0]);
+                return _customerService.GetById(userId);
+            }
 
-        public Account Insert(Account item)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Account Update(long id, Account item)
-        {
-            throw new NotImplementedException();
+            return null;
         }
     }
 }

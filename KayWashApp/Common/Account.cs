@@ -14,8 +14,7 @@ namespace KayWashApp.Common
         [Required]
         [StringLength(15)]
         public string Phone { get; set; }
-        [Required]
-        [StringLength(12)]
+       
         public string Password { get; set; }
         [Required]
         [StringLength(50)]

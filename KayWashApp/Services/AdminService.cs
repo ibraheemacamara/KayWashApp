@@ -7,7 +7,7 @@ using KayWashApp.DataAccess.Repositories;
 
 namespace KayWashApp.Services
 {
-    public class AdminService : IAdminService
+    public class AdminService 
     {
         private readonly IAdminRepository _adminRepository;
 

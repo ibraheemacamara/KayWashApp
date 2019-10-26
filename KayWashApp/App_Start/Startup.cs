@@ -17,6 +17,10 @@ using KayWashApp.Services;
 using KayWashApp.Common;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Threading.Tasks;
+using Microsoft.IdentityModel.Tokens;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace KayWashApp
 {
@@ -59,15 +63,29 @@ namespace KayWashApp
                 {
                     OnTokenValidated = context =>
                     {
-                        var userService = context.HttpContext.RequestServices.GetRequiredService<IUserService>();
-                        var userId = int.Parse(context.Principal.Identity.Name);
-                        var user = userService.GetById(userId);
-                        if (user == null)
+                        var userService = context.HttpContext.RequestServices.GetRequiredService<IAccountService>();
+                        if (userService != null)
                         {
-                            // return unauthorized if user no longer exists
-                            context.Fail("Unauthorized");
+                            var user = userService.GetUser(context.Principal.Identity.Name);
+                            if (user == null)
+                            {
+                                // return unauthorized if user no longer exists
+                                context.Fail("Unauthorized");
+                            }
+                            return Task.CompletedTask;
                         }
-                        return Task.CompletedTask;
+                        else
+                        {
+                            var customerService = context.HttpContext.RequestServices.GetRequiredService<ICustomerService>();
+                            var userId = int.Parse(context.Principal.Identity.Name);
+                            var user = customerService.GetById(userId);
+                            if (user == null)
+                            {
+                                // return unauthorized if user no longer exists
+                                context.Fail("Unauthorized");
+                            }
+                            return Task.CompletedTask;
+                        }
                     }
                 };
                 x.RequireHttpsMetadata = false;
@@ -82,11 +100,14 @@ namespace KayWashApp
             });
 
 
-            services.AddScoped<IAdminService, AdminService>();
+            //services.AddScoped<IAdminService, AdminService>();
+            services.AddScoped<IAccountService, AccountService>();
             services.AddScoped<ICarDetailerService, CarDetailerService>();
+            services.AddScoped<ICustomerService, CustomerService>();
 
             services.AddScoped<IAdminRepository, AdminRepository>();
             services.AddScoped<ICarDetailerRepository, CarDetailerRepository>();
+            services.AddScoped<ICustomerRepository, CustomerRepository>();
 
             //services.AddDbContext<KayWashDbContext>(options => options.UseSqlServer(KayWashDbContext.DbConnectionString));
             //services.AddTransient<CarRepository>();
@@ -101,6 +122,29 @@ namespace KayWashApp
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "KayWashApp API", Version = "v1" });
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Description =
+                    "JWT Authorization header using the Bearer scheme. \r\n\r\n Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\nExample: \"Bearer 12345abcdef\"",
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer"
+                });
+
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new List<string>()
+                    }
+                });
             });
 
         }
@@ -123,6 +167,16 @@ namespace KayWashApp
             app.UseStaticFiles();
             app.UseSpaStaticFiles();
 
+            app.UseAuthentication();
+
+           
+            app.UseMvc(routes =>
+            {
+                routes.MapRoute(
+                    name: "default",
+                    template: "{controller}/{action=Index}/{id?}");
+            });
+
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();
 
@@ -131,14 +185,8 @@ namespace KayWashApp
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "KayWashApp V1");
-            });
-
-
-            app.UseMvc(routes =>
-            {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller}/{action=Index}/{id?}");
+                c.OAuthClientId("kaywash_api_swagger");
+                c.OAuthAppName("Kaywash API - Swagger");
             });
 
             app.UseSpa(spa =>

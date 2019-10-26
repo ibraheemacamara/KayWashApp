@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace KayWashApp.Services
 {
-    public interface ICarDetailerService : IGenericService<CarDetailerDto>
+    public interface ICustomerService : IGenericService<CustomerDto>
     {
     }
 }

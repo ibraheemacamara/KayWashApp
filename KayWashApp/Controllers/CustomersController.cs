@@ -7,6 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using KayWashApp.DataAccess;
 using KayWashApp.DataAccess.Model;
+using KayWashApp.Services;
+using KayWashApp.Common;
+using Microsoft.Extensions.Options;
+using KayWashApp.Dto;
+using Microsoft.AspNetCore.Authorization;
 
 namespace KayWashApp.Controllers
 {
@@ -14,48 +19,77 @@ namespace KayWashApp.Controllers
     [ApiController]
     public class CustomersController : ControllerBase
     {
-        private readonly KayWashAppContext _context;
+        private readonly ICustomerService _customerService;
+        private readonly AppSettings _appSettings;
 
-        public CustomersController(KayWashAppContext context)
+        public CustomersController(ICustomerService service, IOptions<AppSettings> appSettings)
         {
-            _context = context;
+            _customerService = service;
+            _appSettings = appSettings.Value;
+        }
+
+        [AllowAnonymous]
+        [HttpPost("authenticate")]
+        public async Task<object> Authenticate([FromBody]CustomerDto carDetailerDto)
+        {
+            var customer = _customerService.Authenticate(carDetailerDto.Phone, carDetailerDto.Password);
+
+            if (customer == null)
+            {
+                return BadRequest(new { message = "Le numéro de téléphone ou le mot de pass est incorrect" });
+            }
+
+            var tokenString = TokenProvider.CreateToken(_appSettings.Secret, customer.Id.ToString()+",customer");
+
+            return await Task.FromResult(new
+            {
+                Id = customer.Id,
+                Phone = customer.Phone,
+                FirstName = customer.FirstName,
+                LastName = customer.LastName,
+                Token = tokenString
+            });
+
         }
 
         // GET: api/Customers
+        [Authorize]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Customer>>> GetCustomer()
+        public async Task<IEnumerable<CustomerDto>> GetCustomer()
         {
-            return await _context.Customer.ToListAsync();
+            var customers = _customerService.GetAll();
+
+            return await Task.FromResult(customers);
         }
 
         // GET: api/Customers/5
+        [Authorize]
         [HttpGet("{id}")]
-        public async Task<ActionResult<Customer>> GetCustomer(long id)
+        public async Task<ActionResult<CustomerDto>> GetCustomer(long id)
         {
-            var customer = await _context.Customer.FindAsync(id);
+            var customer = _customerService.GetById(id);
 
             if (customer == null)
             {
                 return NotFound();
             }
 
-            return customer;
+            return await Task.FromResult(customer);
         }
 
         // PUT: api/Customers/5
+        [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutCustomer(long id, Customer customer)
+        public async Task<IActionResult> PutCustomer(long id, CustomerDto customer)
         {
             if (id != customer.Id)
             {
                 return BadRequest();
             }
 
-            _context.Entry(customer).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
+                _customerService.Update(id, customer);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -69,38 +103,55 @@ namespace KayWashApp.Controllers
                 }
             }
 
-            return NoContent();
+            return  NoContent();
         }
 
         // POST: api/Customers
-        [HttpPost]
-        public async Task<ActionResult<Customer>> PostCustomer(Customer customer)
+        [Authorize]
+        [AllowAnonymous]
+        [HttpPost("register")]
+        public async Task<ActionResult<Customer>> Register(CustomerDto customer)
         {
-            _context.Customer.Add(customer);
-            await _context.SaveChangesAsync();
+            //TODO validation
 
-            return CreatedAtAction("GetCustomer", new { id = customer.Id }, customer);
+            try
+            {
+                _customerService.Insert(customer);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                //TODO log
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         // DELETE: api/Customers/5
         [HttpDelete("{id}")]
-        public async Task<ActionResult<Customer>> DeleteCustomer(long id)
+        public async Task<ActionResult<CustomerDto>> DeleteCustomer(long id)
         {
-            var customer = await _context.Customer.FindAsync(id);
+            var customer = _customerService.GetById(id);
             if (customer == null)
             {
                 return NotFound();
             }
 
-            _context.Customer.Remove(customer);
-            await _context.SaveChangesAsync();
+            try
+            {
+                _customerService.Delete(id);
+            }
+            catch (Exception)
+            {
 
-            return customer;
+                return BadRequest();
+            }
+
+            return await Task.FromResult(customer);
         }
 
         private bool CustomerExists(long id)
         {
-            return _context.Customer.Any(e => e.Id == id);
+            return _customerService.GetAll().Any(e => e.Id == id);
         }
     }
 }

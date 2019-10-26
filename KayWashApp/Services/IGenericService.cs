@@ -17,5 +17,7 @@ namespace KayWashApp.Services
         T Update(long id, T item);
 
         void Delete(long id);
+
+        T Authenticate(string phone, string password);
     }
 }
