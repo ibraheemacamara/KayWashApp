@@ -23,6 +23,8 @@ namespace KayWashApp.DataAccess
 
         public DbSet<KayWashApp.DataAccess.Model.CarDetailer> CarDetailer { get; set; }
 
+        public DbSet<KayWashApp.DataAccess.Model.CarCategory> CarCategory { get; set; }
+
         public DbSet<KayWashApp.DataAccess.Model.Car> Car { get; set; }
 
         public DbSet<KayWashApp.DataAccess.Model.Admin> Admin { get; set; }

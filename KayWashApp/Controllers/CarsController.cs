@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using KayWashApp.DataAccess;
 using KayWashApp.DataAccess.Model;
+using KayWashApp.Services;
+using Microsoft.AspNetCore.Authorization;
+using KayWashApp.Dto;
 
 namespace KayWashApp.Controllers
 {
@@ -14,48 +17,50 @@ namespace KayWashApp.Controllers
     [ApiController]
     public class CarsController : ControllerBase
     {
-        private readonly KayWashAppContext _context;
+        private readonly ICarService _carService;
 
-        public CarsController(KayWashAppContext context)
+        public CarsController(ICarService service)
         {
-            _context = context;
+            _carService = service;
         }
 
         // GET: api/Cars
+        [Authorize]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Car>>> GetCar()
+        public async Task<IEnumerable<CarDto>> GetCar()
         {
-            return await _context.Car.ToListAsync();
+            var cars = _carService.GetAll();
+
+            return await Task.FromResult(cars);
         }
 
         // GET: api/Cars/5
+        [Authorize]
         [HttpGet("{id}")]
-        public async Task<ActionResult<Car>> GetCar(long id)
+        public async Task<ActionResult<CarDto>> GetCar(long id)
         {
-            var car = await _context.Car.FindAsync(id);
+            var car = _carService.GetById(id);
 
             if (car == null)
             {
                 return NotFound();
             }
 
-            return car;
+            return await Task.FromResult(car);
         }
 
         // PUT: api/Cars/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutCar(long id, Car car)
+        public async Task<IActionResult> PutCar(long id, CarDto car)
         {
             if (id != car.Id)
             {
                 return BadRequest();
             }
 
-            _context.Entry(car).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
+                _carService.Update(id, car);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -73,34 +78,47 @@ namespace KayWashApp.Controllers
         }
 
         // POST: api/Cars
+        [Authorize]
         [HttpPost]
-        public async Task<ActionResult<Car>> PostCar(Car car)
+        public async Task<ActionResult<CarDto>> PostCar(CarDto car)
         {
-            _context.Car.Add(car);
-            await _context.SaveChangesAsync();
+            try
+            {
+                _carService.Insert(car);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
 
-            return CreatedAtAction("GetCar", new { id = car.Id }, car);
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         // DELETE: api/Cars/5
         [HttpDelete("{id}")]
-        public async Task<ActionResult<Car>> DeleteCar(long id)
+        public async Task<ActionResult<CarDto>> DeleteCar(long id)
         {
-            var car = await _context.Car.FindAsync(id);
+            var car = _carService.GetById(id);
             if (car == null)
             {
                 return NotFound();
             }
 
-            _context.Car.Remove(car);
-            await _context.SaveChangesAsync();
+            try
+            {
+                _carService.Delete(id);
+            }
+            catch (Exception)
+            {
 
-            return car;
+                return BadRequest();
+            }
+
+            return await Task.FromResult(car);
         }
-
         private bool CarExists(long id)
         {
-            return _context.Car.Any(e => e.Id == id);
+            return _carService.GetAll().Any(e => e.Id == id);
         }
     }
 }

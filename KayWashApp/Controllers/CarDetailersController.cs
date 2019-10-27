@@ -155,7 +155,7 @@ namespace KayWashApp.Controllers
                 return BadRequest();
             }
 
-            return carDetailer;
+            return await Task.FromResult(carDetailer);
         }
 
         private bool CarDetailerExists(long id)

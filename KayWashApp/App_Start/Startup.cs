@@ -104,10 +104,14 @@ namespace KayWashApp
             services.AddScoped<IAccountService, AccountService>();
             services.AddScoped<ICarDetailerService, CarDetailerService>();
             services.AddScoped<ICustomerService, CustomerService>();
+            services.AddScoped<ICarService, CarService>();
+            services.AddScoped<IWashPackageService, WashPackageService>();
 
             services.AddScoped<IAdminRepository, AdminRepository>();
             services.AddScoped<ICarDetailerRepository, CarDetailerRepository>();
             services.AddScoped<ICustomerRepository, CustomerRepository>();
+            services.AddScoped<ICarRepository, CarRepository>();
+            services.AddScoped<IWashPackageRepository, WashPackageRepository>();
 
             //services.AddDbContext<KayWashDbContext>(options => options.UseSqlServer(KayWashDbContext.DbConnectionString));
             //services.AddTransient<CarRepository>();

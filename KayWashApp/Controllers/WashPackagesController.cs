@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using KayWashApp.DataAccess;
 using KayWashApp.DataAccess.Model;
+using KayWashApp.Services;
+using Microsoft.AspNetCore.Authorization;
+using KayWashApp.Dto;
 
 namespace KayWashApp.Controllers
 {
@@ -14,93 +17,97 @@ namespace KayWashApp.Controllers
     [ApiController]
     public class WashPackagesController : ControllerBase
     {
-        private readonly KayWashAppContext _context;
+        private readonly IWashPackageService _washPackageService;
 
-        public WashPackagesController(KayWashAppContext context)
+        public WashPackagesController(IWashPackageService context)
         {
-            _context = context;
+            _washPackageService = context;
         }
 
         // GET: api/WashPackages
+        [Authorize]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<WashPackage>>> GetWashPackage()
+        public async Task<IEnumerable<WashPackageDto>> GetWashPackage()
         {
-            return await _context.WashPackage.ToListAsync();
+            var packages = _washPackageService.GetAll();
+
+            return await Task.FromResult(packages);
         }
 
         // GET: api/WashPackages/5
+        [Authorize]
         [HttpGet("{id}")]
-        public async Task<ActionResult<WashPackage>> GetWashPackage(long id)
+        public async Task<ActionResult<WashPackageDto>> GetWashPackage(long id)
         {
-            var washPackage = await _context.WashPackage.FindAsync(id);
+            var package = _washPackageService.GetById(id);
 
-            if (washPackage == null)
+            if (package == null)
             {
                 return NotFound();
             }
 
-            return washPackage;
+            return await Task.FromResult(package);
         }
 
-        // PUT: api/WashPackages/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutWashPackage(long id, WashPackage washPackage)
-        {
-            if (id != washPackage.Id)
-            {
-                return BadRequest();
-            }
+        //// PUT: api/WashPackages/5
+        //[HttpPut("{id}")]
+        //public async Task<IActionResult> PutWashPackage(long id, WashPackage washPackage)
+        //{
+        //    if (id != washPackage.Id)
+        //    {
+        //        return BadRequest();
+        //    }
 
-            _context.Entry(washPackage).State = EntityState.Modified;
+        //    _washPackageService.Entry(washPackage).State = EntityState.Modified;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!WashPackageExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+        //    try
+        //    {
+        //        await _washPackageService.SaveChangesAsync();
+        //    }
+        //    catch (DbUpdateConcurrencyException)
+        //    {
+        //        if (!WashPackageExists(id))
+        //        {
+        //            return NotFound();
+        //        }
+        //        else
+        //        {
+        //            throw;
+        //        }
+        //    }
 
-            return NoContent();
-        }
+        //    return NoContent();
+        //}
 
-        // POST: api/WashPackages
-        [HttpPost]
-        public async Task<ActionResult<WashPackage>> PostWashPackage(WashPackage washPackage)
-        {
-            _context.WashPackage.Add(washPackage);
-            await _context.SaveChangesAsync();
+        //// POST: api/WashPackages
+        //[HttpPost]
+        //public async Task<ActionResult<WashPackage>> PostWashPackage(WashPackage washPackage)
+        //{
+        //    _washPackageService.WashPackage.Add(washPackage);
+        //    await _washPackageService.SaveChangesAsync();
 
-            return CreatedAtAction("GetWashPackage", new { id = washPackage.Id }, washPackage);
-        }
+        //    return CreatedAtAction("GetWashPackage", new { id = washPackage.Id }, washPackage);
+        //}
 
-        // DELETE: api/WashPackages/5
-        [HttpDelete("{id}")]
-        public async Task<ActionResult<WashPackage>> DeleteWashPackage(long id)
-        {
-            var washPackage = await _context.WashPackage.FindAsync(id);
-            if (washPackage == null)
-            {
-                return NotFound();
-            }
+        //// DELETE: api/WashPackages/5
+        //[HttpDelete("{id}")]
+        //public async Task<ActionResult<WashPackage>> DeleteWashPackage(long id)
+        //{
+        //    var washPackage = await _washPackageService.WashPackage.FindAsync(id);
+        //    if (washPackage == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            _context.WashPackage.Remove(washPackage);
-            await _context.SaveChangesAsync();
+        //    _washPackageService.WashPackage.Remove(washPackage);
+        //    await _washPackageService.SaveChangesAsync();
 
-            return washPackage;
-        }
+        //    return washPackage;
+        //}
 
-        private bool WashPackageExists(long id)
-        {
-            return _context.WashPackage.Any(e => e.Id == id);
-        }
+        //private bool WashPackageExists(long id)
+        //{
+        //    return _washPackageService.WashPackage.Any(e => e.Id == id);
+        //}
     }
 }

@@ -20,6 +20,13 @@ namespace KayWashApp.DataAccess.Model
         [StringLength(50)]
         public string Type { get; set; }
 
+        [Required]
+        [StringLength(50)]
+        public string ImmatriculationNumber { get; set; }
+
+        [ForeignKey("CarCategoryId")]
+        public int CarCategoryId { get; set; }
+
         public byte[] Image { get; set; }
     }
 }
