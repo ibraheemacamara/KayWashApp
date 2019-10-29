@@ -54,9 +54,15 @@ namespace KayWashApp.Migrations
                         .ValueGeneratedOnAdd()
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+                    b.Property<int>("CarCategoryId");
+
                     b.Property<long>("CustomerId");
 
                     b.Property<byte[]>("Image");
+
+                    b.Property<string>("ImmatriculationNumber")
+                        .IsRequired()
+                        .HasMaxLength(50);
 
                     b.Property<string>("Model")
                         .IsRequired()
@@ -71,6 +77,23 @@ namespace KayWashApp.Migrations
                     b.HasIndex("CustomerId");
 
                     b.ToTable("Car");
+                });
+
+            modelBuilder.Entity("KayWashApp.DataAccess.Model.CarCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<byte[]>("Image");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50);
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CarCategory");
                 });
 
             modelBuilder.Entity("KayWashApp.DataAccess.Model.CarDetailer", b =>
@@ -187,6 +210,14 @@ namespace KayWashApp.Migrations
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<double>("Amount");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50);
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(250);
 
                     b.Property<string>("Name")
                         .IsRequired()

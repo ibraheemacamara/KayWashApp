@@ -7,6 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using KayWashApp.DataAccess;
 using KayWashApp.DataAccess.Model;
+using KayWashApp.Services;
+using Microsoft.AspNetCore.Authorization;
+using KayWashApp.Dto;
+using KayWashApp.Common;
 
 namespace KayWashApp.Controllers
 {
@@ -14,48 +18,67 @@ namespace KayWashApp.Controllers
     [ApiController]
     public class WashRequestsController : ControllerBase
     {
-        private readonly KayWashAppContext _context;
+        private readonly IWashRequestService _washRequestService;
 
-        public WashRequestsController(KayWashAppContext context)
+        public WashRequestsController(IWashRequestService service)
         {
-            _context = context;
+            _washRequestService = service;
         }
 
         // GET: api/WashRequests
+        [Authorize]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<WashRequest>>> GetWashRequest()
+        public async Task<IEnumerable<WashRequestDto>> GetWashRequest()
         {
-            return await _context.WashRequest.ToListAsync();
+            var washRequests = _washRequestService.GetAll();
+
+            return await Task.FromResult(washRequests);
         }
 
         // GET: api/WashRequests/5
+        [Authorize]
         [HttpGet("{id}")]
-        public async Task<ActionResult<WashRequest>> GetWashRequest(long id)
+        public async Task<ActionResult<WashRequestDto>> GetWashRequest(long id)
         {
-            var washRequest = await _context.WashRequest.FindAsync(id);
+
+            var washRequest = _washRequestService.GetById(id);
 
             if (washRequest == null)
             {
                 return NotFound();
             }
 
-            return washRequest;
+            return await Task.FromResult(washRequest);
+        }
+
+        [Authorize]
+        [HttpGet("{reference}")]
+        public async Task<ActionResult<WashRequestDto>> GetWashRequest(string reference)
+        {
+
+            var washRequest = _washRequestService.GetByRef(reference);
+
+            if (washRequest == null)
+            {
+                return NotFound();
+            }
+
+            return await Task.FromResult(washRequest);
         }
 
         // PUT: api/WashRequests/5
+        [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutWashRequest(long id, WashRequest washRequest)
+        public async Task<IActionResult> PutWashRequest(long id, WashRequestDto washRequest)
         {
             if (id != washRequest.Id)
             {
                 return BadRequest();
             }
 
-            _context.Entry(washRequest).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
+                _washRequestService.Update(id, washRequest);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -73,34 +96,51 @@ namespace KayWashApp.Controllers
         }
 
         // POST: api/WashRequests
+        [Authorize]
         [HttpPost]
-        public async Task<ActionResult<WashRequest>> PostWashRequest(WashRequest washRequest)
+        public async Task<ActionResult<WashRequestDto>> PostWashRequest(WashRequestDto washRequest)
         {
-            _context.WashRequest.Add(washRequest);
-            await _context.SaveChangesAsync();
+            washRequest.WashRequestRef = Helper.GenerateRef();
 
-            return CreatedAtAction("GetWashRequest", new { id = washRequest.Id }, washRequest);
+            try
+            {
+                _washRequestService.Insert(washRequest);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         // DELETE: api/WashRequests/5
+        [Authorize]
         [HttpDelete("{id}")]
-        public async Task<ActionResult<WashRequest>> DeleteWashRequest(long id)
+        public async Task<ActionResult<WashRequestDto>> DeleteWashRequest(long id)
         {
-            var washRequest = await _context.WashRequest.FindAsync(id);
+            var washRequest = _washRequestService.GetById(id);
             if (washRequest == null)
             {
                 return NotFound();
             }
 
-            _context.WashRequest.Remove(washRequest);
-            await _context.SaveChangesAsync();
+            try
+            {
+                _washRequestService.Delete(id);
+            }
+            catch (Exception)
+            {
 
-            return washRequest;
+                return BadRequest();
+            }
+
+            return await Task.FromResult(washRequest);
         }
 
         private bool WashRequestExists(long id)
         {
-            return _context.WashRequest.Any(e => e.Id == id);
+            return _washRequestService.GetAll().Any(e => e.Id == id);
         }
     }
 }
